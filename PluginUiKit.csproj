@@ -1,0 +1,30 @@
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
+  <PropertyGroup>
+    <!-- Reine Klassenbibliothek, kein eigenständiges Plugin: kein IDalamudPlugin, keine
+         Manifest-/Icon-Felder, kein DalamudPackager-Schritt. Das Dalamud.NET.Sdk wird trotzdem
+         verwendet (nicht Microsoft.NET.Sdk), weil es automatisch dieselben Dalamud-/ImGui-
+         Referenzassemblies auflöst wie jedes Plugin, das dieses Paket einbindet - ohne das SDK
+         müssten Pfad und Version von Hand synchron gehalten werden. -->
+    <Version>1.0.0.0</Version>
+    <RootNamespace>PluginUiKit</RootNamespace>
+    <!-- Reine Klassenbibliothek, kein eigenständiges Plugin - der DalamudPackager-Schritt (baut ein
+         .zip-Release mit Manifest) verlangt sonst Plugin-Name/Autor/Beschreibung, die es hier nicht gibt. -->
+    <Use_DalamudPackager>false</Use_DalamudPackager>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Schriftdateien wandern mit jedem Plugin aus, das dieses Paket referenziert (ProjectReference
+         kopiert referenzierte "None/CopyToOutputDirectory"-Inhalte automatisch mit ins Ausgabeverzeichnis
+         des referenzierenden Projekts). -->
+    <None Include="Data\Fonts\Cinzel.ttf" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Data\Fonts\Cinzel-Bold.ttf" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Data\Fonts\Alegreya.ttf" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Data\Fonts\AlegreyaItalic.ttf" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Data\Fonts\AlegreyaSans-Regular.ttf" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Data\Fonts\AlegreyaSans-Medium.ttf" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Data\Fonts\AlegreyaSans-Bold.ttf" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Data\Fonts\OFL-Cinzel.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Data\Fonts\OFL-Alegreya.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Data\Fonts\OFL-AlegreyaSans.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
