@@ -89,10 +89,13 @@ public static class UiWidgetsExtra
         ImGui.Dummy(new Vector2(width, ts.Y));
     }
 
-    /// <summary>Hinweis-Karte mit Tastenkürzel (z.B. "Ctrl" + "Shift" + "Click" ... Text). "maxWidth" begrenzt die Kartenbreite optional (sonst volle verfügbare Breite).</summary>
-    public static void ShortcutHint(IReadOnlyList<string> keys, string text, float? maxWidth = null)
+    /// <summary>Hinweis-Karte mit Tastenkürzel (z.B. "Ctrl" + "Shift" + "Click" ... Text). "maxWidth" begrenzt die Kartenbreite optional (sonst volle verfügbare Breite).
+    /// "keyFont"/"textFont" überschreiben optional die sonst genutzte UiFonts.Body (siehe UiWidgets.ToggleRow-Kommentar zum selben Muster).</summary>
+    public static void ShortcutHint(IReadOnlyList<string> keys, string text, float? maxWidth = null, IFontHandle? keyFont = null, IFontHandle? textFont = null)
     {
         var s = ImGuiHelpers.GlobalScale;
+        var kf = keyFont ?? UiFonts.Body;
+        var tf = textFont ?? UiFonts.Body;
         var dl = ImGui.GetWindowDrawList();
         var origin = ImGui.GetCursorScreenPos();
         var width = MathF.Min(ImGui.GetContentRegionAvail().X, maxWidth ?? float.MaxValue);
@@ -102,9 +105,9 @@ public static class UiWidgetsExtra
         float plusGap = 5f * s, textGap = 14f * s;
 
         float keyTextH, bodyH;
-        using (UiFonts.Body.Push())
+        using (var _ = kf.Push())
             keyTextH = ImGui.GetTextLineHeight();
-        using (UiFonts.Body.Push())
+        using (var _ = tf.Push())
             bodyH = ImGui.GetTextLineHeight();
         var keyH = keyTextH + keyPadY * 2f + 1f * s;
         var height = MathF.Max(keyH, bodyH) + padY * 2f;
@@ -116,7 +119,7 @@ public static class UiWidgetsExtra
 
         var x = origin.X + padX;
 
-        using (UiFonts.Body.Push())
+        using (var _ = kf.Push())
         {
             for (var i = 0; i < keys.Count; i++)
             {
@@ -140,7 +143,7 @@ public static class UiWidgetsExtra
         }
 
         x += textGap;
-        using (UiFonts.Body.Push())
+        using (var _ = tf.Push())
             dl.AddText(new Vector2(x, midY - bodyH / 2f), ImGui.GetColorU32(T.TextSecondary), text);
 
         ImGui.Dummy(new Vector2(width, height));
@@ -148,7 +151,7 @@ public static class UiWidgetsExtra
 
     /// <summary>Gefüllter Fortschrittsbalken - abgerundete Enden, Füllung bei fraction &gt; 0 mindestens 4px breit (sonst bei sehr kleinen Anteilen praktisch unsichtbar).
     /// "width" überschreibt optional die sonst über ImGui.GetContentRegionAvail() ermittelte Breite.</summary>
-    public static void ProgressBar(float fraction, float height, string? tooltip = null, float? width = null)
+    public static void ProgressBar(float fraction, float height, string? tooltip = null, float? width = null, Vector4? fillColor = null, Vector4? trackColor = null)
     {
         var s = ImGuiHelpers.GlobalScale;
         height *= s;
@@ -157,11 +160,11 @@ public static class UiWidgetsExtra
         var w = width ?? ImGui.GetContentRegionAvail().X;
         var r = height / 2f;
 
-        dl.AddRectFilled(p, p + new Vector2(w, height), ImGui.GetColorU32(T.BgSelected), r);
+        dl.AddRectFilled(p, p + new Vector2(w, height), ImGui.GetColorU32(trackColor ?? T.BgSelected), r);
         if (fraction > 0f)
         {
             var fw = MathF.Max(w * Math.Clamp(fraction, 0f, 1f), 4f * s);
-            dl.AddRectFilled(p, p + new Vector2(fw, height), ImGui.GetColorU32(T.Accent), r);
+            dl.AddRectFilled(p, p + new Vector2(fw, height), ImGui.GetColorU32(fillColor ?? T.Accent), r);
         }
 
         ImGui.Dummy(new Vector2(w, height));
@@ -171,10 +174,11 @@ public static class UiWidgetsExtra
 
     /// <summary>Fließende Knopfreihe mit Umbruch - ImGui bricht SameLine-Ketten nicht von selbst um, daher hier manuell: ein Knopf, der nicht mehr in die
     /// aktuelle Zeile passt, beginnt eine neue. "isConfirmed" markiert einen Knopf optional als "gerade bestätigt" (z.B. 1,5s nach einem Klick) - zeigt dann
-    /// ein Häkchen in OkFg statt des "icon"-Symbols.</summary>
-    public static void FlowButtons(IReadOnlyList<(string Label, Action OnClick)> items, float gap, Func<string, bool>? isConfirmed = null, FontAwesomeIcon icon = FontAwesomeIcon.Terminal)
+    /// ein Häkchen in OkFg statt des "icon"-Symbols. "labelFont" überschreibt optional UiFonts.BodyMedium (siehe UiWidgets.ToggleRow-Kommentar zum selben Muster).</summary>
+    public static void FlowButtons(IReadOnlyList<(string Label, Action OnClick)> items, float gap, Func<string, bool>? isConfirmed = null, FontAwesomeIcon icon = FontAwesomeIcon.Terminal, IFontHandle? labelFont = null)
     {
         var s = ImGuiHelpers.GlobalScale;
+        var lf = labelFont ?? UiFonts.BodyMedium;
         gap *= s;
         var rightEdge = ImGui.GetWindowPos().X + ImGui.GetWindowContentRegionMax().X;
 
@@ -183,7 +187,7 @@ public static class UiWidgetsExtra
         {
             var (label, onClick) = items[i];
             var confirmed = isConfirmed?.Invoke(label) ?? false;
-            var size = MeasureFlowButton(label, s, icon);
+            var size = MeasureFlowButton(label, s, icon, lf);
 
             if (i > 0)
             {
@@ -192,13 +196,13 @@ public static class UiWidgetsExtra
                     ImGui.NewLine();
             }
 
-            if (DrawFlowButton(label, confirmed, size, s, icon))
+            if (DrawFlowButton(label, confirmed, size, s, icon, lf))
                 onClick();
         }
         ImGui.PopStyleVar();
     }
 
-    private static Vector2 MeasureFlowButton(string label, float scale, FontAwesomeIcon icon)
+    private static Vector2 MeasureFlowButton(string label, float scale, FontAwesomeIcon icon, IFontHandle labelFont)
     {
         var padding = new Vector2(11f * scale, 5f * scale);
         var iconGap = 6f * scale;
@@ -207,7 +211,7 @@ public static class UiWidgetsExtra
         using (UiFonts.PluginInterfaceIconFont.Push())
             iconWidth = ImGui.CalcTextSize(icon.ToIconString()).X;
         float textWidth, textHeight;
-        using (UiFonts.BodyMedium.Push())
+        using (var _ = labelFont.Push())
         {
             var size = ImGui.CalcTextSize(label);
             textWidth = size.X;
@@ -217,7 +221,7 @@ public static class UiWidgetsExtra
         return new Vector2(iconWidth + iconGap + textWidth + padding.X * 2f, textHeight + padding.Y * 2f);
     }
 
-    private static bool DrawFlowButton(string label, bool confirmed, Vector2 buttonSize, float scale, FontAwesomeIcon icon)
+    private static bool DrawFlowButton(string label, bool confirmed, Vector2 buttonSize, float scale, FontAwesomeIcon icon, IFontHandle labelFont)
     {
         var padding = new Vector2(11f * scale, 5f * scale);
         var iconGap = 6f * scale;
@@ -242,14 +246,14 @@ public static class UiWidgetsExtra
             iconHeight = iconSize.Y;
         }
         float textHeight;
-        using (UiFonts.BodyMedium.Push())
+        using (var _ = labelFont.Push())
             textHeight = ImGui.CalcTextSize(label).Y;
 
         var iconCursor = cursor + new Vector2(padding.X, (buttonSize.Y - iconHeight) / 2f);
         using (UiFonts.PluginInterfaceIconFont.Push())
             dl.AddText(iconCursor, ImGui.GetColorU32(iconColor), drawIcon.ToIconString());
         var textCursor = new Vector2(cursor.X + padding.X + iconWidth + iconGap, cursor.Y + (buttonSize.Y - textHeight) / 2f);
-        using (UiFonts.BodyMedium.Push())
+        using (var _ = labelFont.Push())
             dl.AddText(textCursor, ImGui.GetColorU32(T.TextHeading), label);
 
         if (hovered)
@@ -260,7 +264,7 @@ public static class UiWidgetsExtra
 
     /// <summary>Kleines Badge/Typ-Etikett - gefüllter, umrandeter, abgerundeter Hintergrund mit zentriertem Text. Generischer Baustein für
     /// Status-/Typ-/Tag-Chips (NEW/IMPROVED/..., Sammelobjekt-Typ, Plugin-Status) - Aufrufer übergibt Text/Farben, zeichnet an der aktuellen Cursorposition.</summary>
-    public static Vector2 Badge(string text, Vector4 fg, Vector4 bg, Vector4 line, float scale, IFontHandle? font = null)
+    public static Vector2 Badge(string text, Vector4 fg, Vector4 bg, Vector4 line, float scale, IFontHandle? font = null, float? radius = null)
     {
         var padding = new Vector2(7f * scale, 1f * scale);
         float textWidth, textHeight;
@@ -273,8 +277,9 @@ public static class UiWidgetsExtra
         var size2 = new Vector2(textWidth + padding.X * 2f, textHeight + padding.Y * 2f);
         var cursor = ImGui.GetCursorScreenPos();
         var dl = ImGui.GetWindowDrawList();
-        dl.AddRectFilled(cursor, cursor + size2, ImGui.GetColorU32(bg), UiMetrics.ControlRadius * scale);
-        dl.AddRect(cursor, cursor + size2, ImGui.GetColorU32(line), UiMetrics.ControlRadius * scale);
+        var rounding = (radius ?? UiMetrics.ControlRadius) * scale;
+        dl.AddRectFilled(cursor, cursor + size2, ImGui.GetColorU32(bg), rounding);
+        dl.AddRect(cursor, cursor + size2, ImGui.GetColorU32(line), rounding);
         using (var _ = font?.Push())
             dl.AddText(cursor + padding, ImGui.GetColorU32(fg), text);
         ImGui.Dummy(size2);
@@ -293,5 +298,165 @@ public static class UiWidgetsExtra
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (headerHeight - textHeight) / 2f);
             UiWidgets.DrawSpacedText(label.ToUpperInvariant(), T.TextTertiary, 1f);
         }
+    }
+
+    /// <summary>Klickbarer Pillenknopf voller Höhe/Breite (z.B. Prep-Timer-Umschalter) - an: akzentfarben (16% Alpha-Füllung, Accent-Rand,
+    /// TextHeading-Text), aus: transparent mit LineFrame-Rand und gedämpftem Text. "prefixIcon" (optional) wird links vor dem Text gezeichnet.
+    /// Reagiert auf Links- UND Rechtsklick getrennt (z.B. durchschalten vs. Popup öffnen).</summary>
+    public static (bool Left, bool Right) PillButton(string id, string label, Vector2 size, bool active, float scale, IFontHandle font, UiIcon? prefixIcon = null)
+    {
+        var T = UiTheme.Active;
+        var cursor = ImGui.GetCursorScreenPos();
+        ImGui.InvisibleButton(id, size);
+        var left = ImGui.IsItemClicked(ImGuiMouseButton.Left);
+        var right = ImGui.IsItemClicked(ImGuiMouseButton.Right);
+        var hovered = ImGui.IsItemHovered();
+
+        var dl = ImGui.GetWindowDrawList();
+        var bg = active ? T.Accent with { W = 0.16f } : new Vector4(0f, 0f, 0f, 0f);
+        var border = active ? T.Accent : T.LineFrame;
+        var fg = active ? T.TextHeading : T.TextMuted;
+        var rounding = size.Y / 2f;
+        dl.AddRectFilled(cursor, cursor + size, ImGui.GetColorU32(bg), rounding);
+        dl.AddRect(cursor, cursor + size, ImGui.GetColorU32(border), rounding);
+
+        var prefixSize = prefixIcon.HasValue ? size.Y * 0.42f : 0f;
+        var prefixGap = prefixIcon.HasValue ? 5f * scale : 0f;
+        float textWidth, textHeight;
+        using (font.Push())
+        {
+            var textSize = ImGui.CalcTextSize(label);
+            textWidth = textSize.X;
+            textHeight = textSize.Y;
+        }
+
+        var contentWidth = prefixSize + prefixGap + textWidth;
+        var contentX = cursor.X + (size.X - contentWidth) / 2f;
+        if (prefixIcon.HasValue)
+            UiIcons.Draw(prefixIcon.Value, new Vector2(contentX, cursor.Y + (size.Y - prefixSize) / 2f), prefixSize, ImGui.GetColorU32(fg));
+
+        using (font.Push())
+            dl.AddText(new Vector2(contentX + prefixSize + prefixGap, cursor.Y + (size.Y - textHeight) / 2f), ImGui.GetColorU32(fg), label);
+
+        if (hovered)
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        return (left, right);
+    }
+
+    /// <summary>Kreisrunder Icon-Rahmen (Füllung + Rand) - der Aufrufer zeichnet den Inhalt (Bild/Icon) selbst mittig hinein, z.B. per
+    /// drawList.AddImageRounded mit Radius = size/2 für ein rund beschnittenes Ingame-Icon.</summary>
+    public static void CircleIconFrame(Vector2 center, float radius, Vector4 bg, Vector4 border)
+    {
+        var dl = ImGui.GetWindowDrawList();
+        dl.AddCircleFilled(center, radius, ImGui.GetColorU32(bg), 24);
+        dl.AddCircle(center, radius, ImGui.GetColorU32(border), 24);
+    }
+
+    /// <summary>Wie <see cref="CircleIconFrame"/>, zeichnet zusätzlich ein rund beschnittenes Bild hinein (z.B. ein Ingame-Icon) - "textureHandle" ist
+    /// das ImGui-Textur-Handle (z.B. IDalamudTextureWrap.Handle), null lässt das Bild einfach weg (nur der Rahmen bleibt).</summary>
+    public static void RoundIcon(Vector2 center, float radius, Vector4 bg, Vector4 border, ImTextureID? textureHandle, float imageAlpha = 1f)
+    {
+        var dl = ImGui.GetWindowDrawList();
+        dl.AddCircleFilled(center, radius, ImGui.GetColorU32(bg), 24);
+        if (textureHandle is { } handle)
+        {
+            dl.AddImageRounded(handle, center - new Vector2(radius), center + new Vector2(radius), Vector2.Zero, Vector2.One,
+                ImGui.GetColorU32(new Vector4(1f, 1f, 1f, imageAlpha)), radius);
+        }
+        dl.AddCircle(center, radius, ImGui.GetColorU32(border), 24);
+    }
+
+    /// <summary>Beschriftetes Info-Kästchen (kleines Label darüber, fetter Wert darunter) - z.B. "Prep starts" / "in 2d 16:14:29". BgInput-Füllung,
+    /// LineCard-Rahmen, Radius 4, Padding 8/12. "width" ist die volle Kästchenbreite (Aufrufer teilt z.B. mehrere gleich breite Kästchen selbst auf).
+    /// "tooltip" zeigt bei Hover den vollen Wert (z.B. wenn der Wert sonst abgeschnitten werden müsste).</summary>
+    public static void InfoTile(string label, string value, float scale, IFontHandle labelFont, IFontHandle valueFont, float width, Vector4? valueColor = null, string? tooltip = null)
+    {
+        var padX = 12f * scale;
+        var padY = 8f * scale;
+
+        float labelHeight, valueHeight;
+        using (labelFont.Push())
+            labelHeight = ImGui.GetTextLineHeight();
+        using (valueFont.Push())
+            valueHeight = ImGui.GetTextLineHeight();
+
+        var gap = 4f * scale;
+        var height = padY * 2f + labelHeight + gap + valueHeight;
+        var cursor = ImGui.GetCursorScreenPos();
+        var dl = ImGui.GetWindowDrawList();
+
+        dl.AddRectFilled(cursor, cursor + new Vector2(width, height), ImGui.GetColorU32(T.BgInput), UiMetrics.ControlRadius * scale);
+        dl.AddRect(cursor, cursor + new Vector2(width, height), ImGui.GetColorU32(T.LineCard), UiMetrics.ControlRadius * scale);
+
+        using (labelFont.Push())
+            dl.AddText(cursor + new Vector2(padX, padY), ImGui.GetColorU32(T.TextMuted), label);
+
+        var maxValueWidth = width - padX * 2f;
+        string truncatedValue;
+        using (valueFont.Push())
+            truncatedValue = TruncateToWidth(value, maxValueWidth);
+        using (valueFont.Push())
+            dl.AddText(cursor + new Vector2(padX, padY + labelHeight + gap), ImGui.GetColorU32(valueColor ?? T.TextPrimary), truncatedValue);
+
+        ImGui.Dummy(new Vector2(width, height));
+        if ((tooltip != null || truncatedValue != value) && ImGui.IsItemHovered())
+            ImGui.SetTooltip(tooltip ?? value);
+    }
+
+    /// <summary>Tabellenzelle mit Hauptzeile (fett) + gedämpfter Unterzeile darunter (z.B. Fischname + "Gebiet · Ort") - beide Zeilen vertikal als
+    /// Paar innerhalb "rowHeight" zentriert. "subText" null/leer lässt die Unterzeile einfach weg (dann nur die Hauptzeile vertikal zentriert).</summary>
+    public static void TwoLineCell(string mainText, IFontHandle mainFont, Vector4 mainColor, string? subText, IFontHandle? subFont, Vector4? subColor, float rowHeight, float leftPad = 0f)
+    {
+        var cellStart = ImGui.GetCursorScreenPos();
+        var dl = ImGui.GetWindowDrawList();
+
+        float mainHeight;
+        using (mainFont.Push())
+            mainHeight = ImGui.GetTextLineHeight();
+
+        var hasSub = !string.IsNullOrEmpty(subText) && subFont != null;
+        var subHeight = 0f;
+        var gap = 0f;
+        if (hasSub)
+        {
+            using (subFont!.Push())
+                subHeight = ImGui.GetTextLineHeight();
+            gap = 2f * ImGuiHelpers.GlobalScale;
+        }
+
+        var totalHeight = mainHeight + gap + subHeight;
+        var y = cellStart.Y + (rowHeight - totalHeight) / 2f;
+
+        using (mainFont.Push())
+            dl.AddText(new Vector2(cellStart.X + leftPad, y), ImGui.GetColorU32(mainColor), mainText);
+
+        if (hasSub)
+        {
+            using (subFont!.Push())
+                dl.AddText(new Vector2(cellStart.X + leftPad, y + mainHeight + gap), ImGui.GetColorU32(subColor ?? T.TextMuted), subText);
+        }
+
+        ImGui.Dummy(new Vector2(0f, rowHeight));
+    }
+
+    /// <summary>Kürzt "text" mit Auslassungspunkten, bis er inklusive "…" in "maxWidth" passt - erwartet die gewünschte Schrift bereits gepusht.</summary>
+    public static string TruncateToWidth(string text, float maxWidth)
+    {
+        if (ImGui.CalcTextSize(text).X <= maxWidth)
+            return text;
+
+        const string ellipsis = "…";
+        var low = 0;
+        var high = text.Length;
+        while (low < high)
+        {
+            var mid = (low + high + 1) / 2;
+            if (ImGui.CalcTextSize(text[..mid] + ellipsis).X <= maxWidth)
+                low = mid;
+            else
+                high = mid - 1;
+        }
+
+        return low <= 0 ? ellipsis : text[..low] + ellipsis;
     }
 }

@@ -25,6 +25,14 @@ public sealed class UiTheme
     public Vector4 BgSelected { get; set; }
     public Vector4 BgSelectedStrong { get; set; }
 
+    /// <summary>Hintergrund kleiner Statuskarten (siehe UiNav.SidebarStatusCard) - eigener Ton statt BgCard,
+    /// da manche Paletten (z.B. Ocean) hier bewusst einen anderen Wert als normale Karten wollen.</summary>
+    public Vector4 BgStatus { get; set; }
+
+    /// <summary>Hintergrund eines ausgeschalteten Toggle (siehe UiWidgets.Toggle) - eigener Ton statt LineRow,
+    /// da manche Paletten (z.B. Ocean) hier bewusst einen anderen Wert als normale Zeilenlinien wollen.</summary>
+    public Vector4 BgToggleOff { get; set; }
+
     // ---- Linien ----
     public Vector4 LineFrame { get; set; }
     public Vector4 LineControl { get; set; }
@@ -40,6 +48,11 @@ public sealed class UiTheme
     public Vector4 TextValue { get; set; }
     public Vector4 TextSecondary { get; set; }
     public Vector4 TextTertiary { get; set; }
+
+    /// <summary>Beschreibungstext unter einem Einstellungstitel (siehe UiWidgets.SettingRow) - eigener Ton statt
+    /// TextTertiary, da manche Paletten (z.B. Ocean) Beschreibung und "gedämpft" bewusst unterschiedlich färben.</summary>
+    public Vector4 TextDesc { get; set; }
+
     public Vector4 TextMuted { get; set; }
     public Vector4 TextDim { get; set; }
     public Vector4 TextDisabled { get; set; }
@@ -62,7 +75,11 @@ public sealed class UiTheme
     public Vector4 InfoBg { get; set; }
     public Vector4 InfoLine { get; set; }
 
-    private static Vector4 Hex(string hex, float alpha = 1f)
+    /// <summary>Parst eine "#RRGGBB"-Hex-Farbe (führendes "#" optional) - öffentlich, damit Seiten-Code
+    /// seiten-/zustandsspezifische Einzelfarben (die bewusst nicht Teil der generischen Palette sind,
+    /// siehe z.B. OceanMainWindow.FishDataActiveGreen) ebenfalls aus dem Hex-Wert der Vorgabe bauen kann,
+    /// statt ihn von Hand in r/g/b-Floats umzurechnen.</summary>
+    public static Vector4 Hex(string hex, float alpha = 1f)
     {
         hex = hex.TrimStart('#');
         var r = System.Convert.ToInt32(hex.Substring(0, 2), 16) / 255f;
@@ -81,6 +98,8 @@ public sealed class UiTheme
         BgPopup = Hex("#1D1812"),
         BgSelected = Hex("#2E2516"),
         BgSelectedStrong = Hex("#3A2F1E"),
+        BgStatus = Hex("#221C14"),
+        BgToggleOff = Hex("#2A2219"),
 
         LineFrame = Hex("#6A5638"),
         LineControl = Hex("#5A4A33"),
@@ -95,6 +114,7 @@ public sealed class UiTheme
         TextValue = Hex("#E2D3B2"),
         TextSecondary = Hex("#C2B396"),
         TextTertiary = Hex("#B8A88A"),
+        TextDesc = Hex("#B8A88A"),
         TextMuted = Hex("#A8987A"),
         TextDim = Hex("#8A7B62"),
         TextDisabled = Hex("#6E604A"),
@@ -114,6 +134,57 @@ public sealed class UiTheme
         InfoFg = Hex("#9CC4E4"),
         InfoBg = Hex("#18242E"),
         InfoLine = Hex("#2C4458"),
+    };
+
+    /// <summary>Zweite mitgelieferte Palette - ein dunkles Blaugrün mit türkisem Akzent ("Ocean"), z.B. für
+    /// BigFishHelper. Werte wie vom jeweiligen Plugin vorgegeben; Token, die dort nicht explizit benannt
+    /// wurden (z.B. die Status-Semantikfarben OkFg/WarnFg/ErrFg/InfoFg), sind sinnvoll aus der Akzentfarbe
+    /// abgeleitete Platzhalter, da die General-Seite von BigFishHelper sie nicht verwendet.</summary>
+    public static readonly UiTheme Ocean = new()
+    {
+        BgWindow = Hex("#0D1820"),
+        BgSidebar = Hex("#09121A"),
+        BgCard = Hex("#12212C"),
+        BgInput = Hex("#0A141C"),
+        BgPopup = Hex("#12212C"),
+        BgSelected = Hex("#16303D"),
+        BgSelectedStrong = Hex("#1C3B4A"),
+        BgStatus = Hex("#0F1D27"),
+        BgToggleOff = Hex("#10202A"),
+
+        LineFrame = Hex("#2E4A58"),
+        LineControl = Hex("#2E4A58"),
+        LineCard = Hex("#22394A"),
+        LineSubtle = Hex("#1D3240"),
+        LineRow = Hex("#1A2E3B"),
+        LineDisabled = Hex("#1D3240"),
+
+        TextHeading = Hex("#E6F2F4"),
+        TextPrimary = Hex("#DCEBEE"),
+        TextCardTitle = Hex("#BFE0E6"),
+        TextValue = Hex("#DCEBEE"),
+        TextSecondary = Hex("#9FC0C8"),
+        TextTertiary = Hex("#9FC0C8"),
+        TextDesc = Hex("#8FB0B8"),
+        TextMuted = Hex("#7E9EA8"),
+        TextDim = Hex("#7E9EA8"),
+        TextDisabled = Hex("#5C7A82"),
+        TextOnAccent = Hex("#04191C"),
+
+        Accent = Hex("#46C2B8"),
+
+        OkFg = Hex("#46C2B8"),
+        OkBg = Hex("#12212C"),
+        OkLine = Hex("#2E4A58"),
+        WarnFg = Hex("#E0B35C"),
+        WarnBg = Hex("#2A2416"),
+        WarnLine = Hex("#4A3F26"),
+        ErrFg = Hex("#E08A7A"),
+        ErrBg = Hex("#2A1816"),
+        ErrLine = Hex("#4A2826"),
+        InfoFg = Hex("#9FC0C8"),
+        InfoBg = Hex("#12212C"),
+        InfoLine = Hex("#2E4A58"),
     };
 
     /// <summary>Die aktuell aktive Palette - von genau einem Plugin einmal beim Start gesetzt
