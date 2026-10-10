@@ -44,7 +44,10 @@ public static class UiFonts
     /// Handles, die rohe Spieldaten anzeigen können, die bei japanischem Client japanische Zeichen
     /// enthalten) - bewusst standardmäßig AUS, da jeder Merge beim Atlas-Bau Tausende CJK-Glyphen
     /// neu rastert (siehe TheExplorersCodex-Vorfall: >1 Minute Ladezeit bei ~70 Handles, die alle
-    /// standardmäßig mergten).
+    /// standardmäßig mergten). Zusätzlich auf GlyphRangesJapanese statt des vollen CJK-Unified-Sets
+    /// beschränkt (Tausende chinesische Glyphen, die dieses Plugin nie anzeigt, kosteten bei den
+    /// verbliebenen Handles mit mergeCjk:true weiterhin mehrere Minuten Atlas-Bau - zweiter
+    /// TheExplorersCodex-Vorfall, siehe CodexTheme.cs).
     /// </summary>
     public static IFontHandle BuildHandle(string fileName, float sizePx, bool mergeCjk = false) =>
         Atlas.NewDelegateFontHandle(e => e.OnPreBuild(tk =>
@@ -59,6 +62,7 @@ public static class UiFonts
                 {
                     SizePx = ScaledPx(sizePx),
                     MergeFont = baseFont,
+                    GlyphRanges = Dalamud.Interface.GlyphRangesJapanese.GlyphRanges,
                 });
             }
             catch (Exception ex)
